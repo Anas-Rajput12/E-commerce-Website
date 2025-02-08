@@ -1,0 +1,187 @@
+"use client";
+import React, { useEffect, useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { client } from "@/sanity/lib/client";
+import Circles from "@/components/commonContent/Circles";
+
+// Data fetching function
+export async function fetchProductsAndCategories() {
+  const query = `{
+    "products": *[_type == "product"]{
+      _id,
+      title,
+      description,
+      "imageUrl": productImage.asset->url,
+      price,
+      tags,
+      discountPercentage,
+      isNew,
+      category
+    },
+    "categories": *[_type == "category"]{
+      title
+    }
+  }`;
+
+  try {
+    const data = await client.fetch(query);
+    return data;
+  } catch (error) {
+    console.error("Error fetching products and categories:", error);
+    return { products: [], categories: [] };
+  }
+}
+
+export default function HeroCards() {
+  const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [visibleCount, setVisibleCount] = useState(6);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const getData = async () => {
+      try {
+        const { products, categories } = await fetchProductsAndCategories();
+        setProducts(products);
+        setCategories(["All", ...categories.map((cat) => cat.title)]);
+        setLoading(false);
+      } catch (error) {
+        setError("Failed to load products and categories.");
+        setLoading(false);
+      }
+    };
+
+    getData();
+  }, []);
+
+  // Filter products by selected category
+  const filteredProducts =
+    selectedCategory === "All"
+      ? products
+      : products.filter((product) => product.category === selectedCategory);
+
+  // Add product to the cart
+  const handleAddToCart = (product) => {
+    alert(`${product.title} has been added to the cart!`);
+    const storedCart = JSON.parse(localStorage.getItem("cart")) || [];
+    const updatedCart = [...storedCart, product];
+    localStorage.setItem("cart", JSON.stringify(updatedCart));
+  };
+
+  const showMore = () => setVisibleCount((prevCount) => prevCount + 6);
+  const showLess = () => setVisibleCount(6);
+
+  const formatPrice = (price, discountPercentage) =>
+    discountPercentage
+      ? (price * (1 - discountPercentage / 100)).toFixed(2)
+      : price.toFixed(2);
+
+  return (
+    <div className="md:mx-auto py-20 px-6 lg:px-0 w-full md:max-w-[1124px] flex flex-col items-center gap-12">
+      <div className="text-center">
+        <h4 className="text-lg text-gray-500 font-medium">Featured Products</h4>
+        <h3 className="text-3xl text-gray-800 font-bold mt-2">BESTSELLER PRODUCTS</h3>
+        <p className="text-gray-600 mt-4">Discover the best-selling products carefully curated for you.</p>
+      </div>
+
+      {loading && <div className="text-center text-gray-500">Loading products...</div>}
+      {error && <div className="text-center text-red-500">{error}</div>}
+
+      {/* Category Filter */}
+      <div className="flex flex-wrap justify-center gap-4">
+        {categories.map((category) => (
+          <button
+            key={category}
+            onClick={() => setSelectedCategory(category)}
+            className={`px-4 py-2 text-sm font-medium rounded-lg shadow-md transition ${
+              selectedCategory === category
+                ? "bg-blue-500 text-white"
+                : "bg-gray-200 text-gray-800 hover:bg-gray-300"
+            }`}
+          >
+            {category}
+          </button>
+        ))}
+      </div>
+
+      {/* Products Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+        {filteredProducts.slice(0, visibleCount).map((product) => (
+          <div
+            key={product._id}
+            className="flex flex-col bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow overflow-hidden"
+          >
+            <div className="relative h-64">
+              <Image
+                src={product.imageUrl}
+                alt={product.title}
+                layout="fill"
+                objectFit="cover"
+                className="rounded-t-lg"
+              />
+              {product.isNew && (
+                <span className="absolute top-2 left-2 bg-green-500 text-white text-xs font-bold py-1 px-3 rounded-full">
+                  New
+                </span>
+              )}
+            </div>
+
+            <div className="p-4 flex flex-col items-start gap-3">
+              <h3 className="text-lg font-semibold text-gray-800 truncate">{product.title}</h3>
+              <p className="text-sm text-gray-600 line-clamp-2">{product.description}</p>
+
+              <div className="flex items-center gap-3">
+                <span className="text-gray-400 line-through font-medium">${product.price.toFixed(2)}</span>
+                <span className="text-green-600 font-bold">
+                  ${formatPrice(product.price, product.discountPercentage)}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex flex-col lg:flex-row justify-between items-center px-4 py-2 gap-3">
+              <Link
+                href={`/product/${product._id}`}
+                className="text-sm text-blue-600 font-medium underline"
+              >
+                View Details
+              </Link>
+              <button
+                onClick={() => handleAddToCart(product)}
+                className="px-4 py-2 bg-blue-500 text-white text-sm font-medium rounded-lg hover:bg-blue-600 shadow-md transition"
+              >
+                Add to Cart
+              </button>
+            </div>
+
+            <div className="mt-auto py-2 flex justify-center">
+              <Circles />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {filteredProducts.length > 6 && (
+        <div className="flex justify-center gap-4 mt-8">
+          {visibleCount < filteredProducts.length ? (
+            <button
+              onClick={showMore}
+              className="px-6 py-2 bg-blue-500 text-white text-sm font-medium rounded-lg hover:bg-blue-600 shadow-md transition"
+            >
+              Show More
+            </button>
+          ) : (
+            <button
+              onClick={showLess}
+              className="px-6 py-2 bg-red-500 text-white text-sm font-medium rounded-lg hover:bg-red-600 shadow-md transition"
+            >
+              Show Less
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
