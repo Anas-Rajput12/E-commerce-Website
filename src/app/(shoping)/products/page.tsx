@@ -1,139 +1,214 @@
 "use client";
+
 import React, { useEffect, useState } from "react";
-import { FaAngleRight } from "react-icons/fa6";
-import Link from "next/link";
 import Image from "next/image";
-import Cards from "./cards";
+import Link from "next/link";
 import { client } from "@/sanity/lib/client";
+import Circles from "@/components/commonContent/Circles";
 
-export default function Product() {
-  const [products, setProducts] = useState([]);
-  const [filteredProducts, setFilteredProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState("");
+// Define the type for a product
+type Product = {
+  _id: string;
+  title: string;
+  description: string;
+  imageUrl: string;
+  price: number;
+  tags?: string[];
+  discountPercentage?: number;
+  isNew?: boolean;
+  category: string;
+};
 
-  // Fetch data from Sanity
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        // Fetch products
-        const productQuery = `*[_type == "product"] {
-          _id,
-          title,
-          category,
-          price,
-          image
-        }`;
-        const products = await client.fetch(productQuery);
+// Define the type for a category
+type Category = {
+  title: string;
+};
 
-        // Fetch unique categories
-        const categoryQuery = `*[_type == "category"] {
-          _id,
-          title
-        }`;
-        const categories = await sanityClient.fetch(categoryQuery);
-
-        setProducts(products);
-        setFilteredProducts(products);
-        setCategories(categories);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      }
+// Data fetching function
+export async function fetchProductsAndCategories() {
+  const query = `{
+    "products": *[_type == "product"]{
+      _id,
+      title,
+      description,
+      "imageUrl": productImage.asset->url,
+      price,
+      tags,
+      discountPercentage,
+      isNew,
+      category
+    },
+    "categories": *[_type == "category"]{
+      title
     }
-    fetchData();
+  }`;
+
+  try {
+    return await client.fetch(query);
+  } catch (error) {
+    console.error("Error fetching products and categories:", error);
+    return { products: [], categories: [] };
+  }
+}
+
+export default function HeroCards() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<string[]>(["All"]);
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [visibleCount, setVisibleCount] = useState(6);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const getData = async () => {
+      try {
+        const { products, categories } = await fetchProductsAndCategories();
+        setProducts(products || []);
+        setCategories(["All", ...categories.map((cat: Category) => cat.title)]);
+      } catch (err) {
+        console.error("Error fetching data:", err);
+        setError("Failed to load products and categories.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    getData();
   }, []);
 
   // Filter products by selected category
-  useEffect(() => {
-    if (selectedCategory) {
-      const filtered = products.filter(
-        (product) => product.category === selectedCategory
-      );
-      setFilteredProducts(filtered);
-    } else {
-      setFilteredProducts(products);
-    }
-  }, [selectedCategory, products]);
+  const filteredProducts =
+    selectedCategory === "All"
+      ? products
+      : products.filter((product) => product.category === selectedCategory);
+
+  // Add product to the cart
+  const handleAddToCart = (product: Product) => {
+    alert(`${product.title} has been added to the cart!`);
+    const storedCart = JSON.parse(localStorage.getItem("cart") || "[]");
+    const updatedCart = [...storedCart, product];
+    localStorage.setItem("cart", JSON.stringify(updatedCart));
+  };
+
+  const showMore = () => setVisibleCount((prevCount) => prevCount + 6);
+  const showLess = () => setVisibleCount(6);
+
+  const formatPrice = (price: number, discountPercentage?: number) =>
+    discountPercentage
+      ? (price * (1 - discountPercentage / 100)).toFixed(2)
+      : price.toFixed(2);
 
   return (
-    <>
-      {/* Header Section */}
-      <div className="mx-auto max-w-[1440px] h-auto md:h-[92px] flex justify-center items-center mb-20">
-        <div className="lg:max-w-[1036px] md:max-w-[950px] w-full h-[44px] flex flex-col lg:flex-row gap-8 justify-between items-center px-10 lg:px-5">
-          <h3 className="text-2xl text-[#252B42] font-[700]">Shop</h3>
-          <div className="flex items-center gap-3 text-sm font-[700]">
-            <Link href="/" className="text-[#252B42]">
-              Home
-            </Link>
-            <FaAngleRight className="size-6 font-light text-[#BDBDBD]" />
-            <Link href="/shop" className="text-[#BDBDBD]">
-              Shop
-            </Link>
-          </div>
-        </div>
+    <div className="md:mx-auto py-20 px-6 lg:px-0 w-full md:max-w-[1124px] flex flex-col items-center gap-12">
+      <div className="text-center">
+        <h4 className="text-lg text-gray-500 font-medium">Featured Products</h4>
+        <h3 className="text-3xl text-gray-800 font-bold mt-2">BESTSELLER PRODUCTS</h3>
+        <p className="text-gray-600 mt-4">Discover the best-selling products carefully curated for you.</p>
       </div>
 
-      {/* Filter Section */}
-      <div className="mx-auto lg:max-w-[1050px] w-full md:max-w-[950px] h-auto lg:h-[98px] my-20">
-        <div className="flex justify-between items-center px-10 lg:px-5">
-          <h6>Showing {filteredProducts.length} results</h6>
-          <div className="flex items-center gap-4">
-            <select
-              className="w-[200px] h-[40px] bg-white border border-gray-300 rounded px-3 text-sm"
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-            >
-              <option value="">All Categories</option>
-              {categories.map((category) => (
-                <option key={category._id} value={category.title}>
-                  {category.title}
-                </option>
-              ))}
-            </select>
-            <button
-              className="btn w-[94px] h-[40px] bg-[#23A6F0] text-white rounded"
-              onClick={() => setSelectedCategory("")}
-            >
-              Reset
-            </button>
-          </div>
-        </div>
+      {loading && <div className="text-center text-gray-500">Loading products...</div>}
+      {error && <div className="text-center text-red-500">{error}</div>}
+
+      {/* Category Filter */}
+      <div className="flex flex-wrap justify-center gap-4">
+        {categories.map((category) => (
+          <button
+            key={category}
+            onClick={() => setSelectedCategory(category)}
+            className={`px-4 py-2 text-sm font-medium rounded-lg shadow-md transition ${
+              selectedCategory === category
+                ? "bg-blue-500 text-white"
+                : "bg-gray-200 text-gray-800 hover:bg-gray-300"
+            }`}
+          >
+            {category}
+          </button>
+        ))}
       </div>
 
-      {/* Product Cards */}
-      <div className="mx-auto px-10 lg:px-5 lg:max-w-[1088px] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredProducts.map((product) => (
+      {/* Products Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+        {filteredProducts.slice(0, visibleCount).map((product) => (
           <div
             key={product._id}
-            className="w-full h-auto bg-white shadow rounded-lg overflow-hidden"
+            className="flex flex-col bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow overflow-hidden"
           >
-            <div className="w-full h-[200px] bg-gray-200">
-              <Image
-                src={product.image}
-                alt={product.title}
-                width={300}
-                height={200}
-                className="object-cover w-full h-full"
-              />
+            <div className="relative h-64">
+              {product.imageUrl ? (
+                <Image
+                  src={product.imageUrl}
+                  alt={product.title || "Product Image"}
+                  fill
+                  objectFit="cover"
+                  className="rounded-t-lg"
+                />
+              ) : (
+                <div className="bg-gray-200 flex items-center justify-center h-full rounded-t-lg">
+                  <span className="text-gray-500 text-sm">No Image Available</span>
+                </div>
+              )}
+              {product.isNew && (
+                <span className="absolute top-2 left-2 bg-green-500 text-white text-xs font-bold py-1 px-3 rounded-full">
+                  New
+                </span>
+              )}
             </div>
-            <div className="p-4">
-              <h4 className="text-lg font-bold">{product.title}</h4>
-              <p className="text-sm text-gray-500">${product.price}</p>
+
+            <div className="p-4 flex flex-col items-start gap-3">
+              <h3 className="text-lg font-semibold text-gray-800 truncate">{product.title}</h3>
+              <p className="text-sm text-gray-600 line-clamp-2">{product.description}</p>
+
+              <div className="flex items-center gap-3">
+                {product.discountPercentage && (
+                  <span className="text-gray-400 line-through font-medium">${product.price.toFixed(2)}</span>
+                )}
+                <span className="text-green-600 font-bold">
+                  ${formatPrice(product.price, product.discountPercentage)}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex flex-col lg:flex-row justify-between items-center px-4 py-2 gap-3">
+              <Link
+                href={`/product/${product._id}`}
+                className="text-sm text-blue-600 font-medium underline"
+              >
+                View Details
+              </Link>
+              <button
+                onClick={() => handleAddToCart(product)}
+                className="px-4 py-2 bg-blue-500 text-white text-sm font-medium rounded-lg hover:bg-blue-600 shadow-md transition"
+              >
+                Add to Cart
+              </button>
+            </div>
+
+            <div className="mt-auto py-2 flex justify-center">
+              <Circles />
             </div>
           </div>
         ))}
       </div>
 
-      {/* Footer or Additional Components */}
-      <div className="mx-auto px-10 lg:px-5 lg:max-w-[1050px] flex justify-around gap-6 mt-20">
-        <Image src="/Images/logo1.png" alt="Logo" width={100} height={40} />
-        <Image src="/Images/logo2.png" alt="Logo" width={80} height={40} />
-        <Image src="/Images/logo3.png" alt="Logo" width={100} height={40} />
-        <Image src="/Images/logo4.png" alt="Logo" width={100} height={40} />
-      </div>
-
-      {/* Cards Component */}
-      <Cards />
-    </>
+      {filteredProducts.length > 6 && (
+        <div className="flex justify-center gap-4 mt-8">
+          {visibleCount < filteredProducts.length ? (
+            <button
+              onClick={showMore}
+              className="px-6 py-2 bg-blue-500 text-white text-sm font-medium rounded-lg hover:bg-blue-600 shadow-md transition"
+            >
+              Show More
+            </button>
+          ) : (
+            <button
+              onClick={showLess}
+              className="px-6 py-2 bg-red-500 text-white text-sm font-medium rounded-lg hover:bg-red-600 shadow-md transition"
+            >
+              Show Less
+            </button>
+          )}
+        </div>
+      )}
+    </div>
   );
 }

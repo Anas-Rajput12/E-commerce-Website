@@ -5,8 +5,26 @@ import Link from "next/link";
 import { client } from "@/sanity/lib/client";
 import Circles from "@/components/commonContent/Circles";
 
+// Define the types for products and categories
+type Product = {
+  _id: string;
+  title: string;
+  description: string;
+  imageUrl: string;
+  price: number;
+  tags: string[];
+  discountPercentage: number;
+  isNew: boolean;
+  category: string;
+};
+
+type Category = string;
+
 // Data fetching function
-export async function fetchProductsAndCategories() {
+export async function fetchProductsAndCategories(): Promise<{
+  products: Product[];
+  categories: Category[];
+}> {
   const query = `{
     "products": *[_type == "product"]{
       _id,
@@ -26,7 +44,10 @@ export async function fetchProductsAndCategories() {
 
   try {
     const data = await client.fetch(query);
-    return data;
+    return {
+      products: data.products,
+      categories: data.categories.map((cat: { title: string }) => cat.title),
+    };
   } catch (error) {
     console.error("Error fetching products and categories:", error);
     return { products: [], categories: [] };
@@ -34,21 +55,22 @@ export async function fetchProductsAndCategories() {
 }
 
 export default function HeroCards() {
-  const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>(["All"]);
+  const [selectedCategory, setSelectedCategory] = useState<Category>("All");
   const [visibleCount, setVisibleCount] = useState(6);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const getData = async () => {
       try {
         const { products, categories } = await fetchProductsAndCategories();
         setProducts(products);
-        setCategories(["All", ...categories.map((cat) => cat.title)]);
+        setCategories(["All", ...categories]);
         setLoading(false);
-      } catch (error) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      } catch (error : unknown) {
         setError("Failed to load products and categories.");
         setLoading(false);
       }
@@ -64,9 +86,9 @@ export default function HeroCards() {
       : products.filter((product) => product.category === selectedCategory);
 
   // Add product to the cart
-  const handleAddToCart = (product) => {
+  const handleAddToCart = (product: Product) => {
     alert(`${product.title} has been added to the cart!`);
-    const storedCart = JSON.parse(localStorage.getItem("cart")) || [];
+    const storedCart = JSON.parse(localStorage.getItem("cart") || "[]");
     const updatedCart = [...storedCart, product];
     localStorage.setItem("cart", JSON.stringify(updatedCart));
   };
@@ -74,7 +96,7 @@ export default function HeroCards() {
   const showMore = () => setVisibleCount((prevCount) => prevCount + 6);
   const showLess = () => setVisibleCount(6);
 
-  const formatPrice = (price, discountPercentage) =>
+  const formatPrice = (price: number, discountPercentage: number) =>
     discountPercentage
       ? (price * (1 - discountPercentage / 100)).toFixed(2)
       : price.toFixed(2);
@@ -83,8 +105,12 @@ export default function HeroCards() {
     <div className="md:mx-auto py-20 px-6 lg:px-0 w-full md:max-w-[1124px] flex flex-col items-center gap-12">
       <div className="text-center">
         <h4 className="text-lg text-gray-500 font-medium">Featured Products</h4>
-        <h3 className="text-3xl text-gray-800 font-bold mt-2">BESTSELLER PRODUCTS</h3>
-        <p className="text-gray-600 mt-4">Discover the best-selling products carefully curated for you.</p>
+        <h3 className="text-3xl text-gray-800 font-bold mt-2">
+          BESTSELLER PRODUCTS
+        </h3>
+        <p className="text-gray-600 mt-4">
+          Discover the best-selling products carefully curated for you.
+        </p>
       </div>
 
       {loading && <div className="text-center text-gray-500">Loading products...</div>}

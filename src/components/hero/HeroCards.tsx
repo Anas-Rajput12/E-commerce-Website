@@ -1,10 +1,22 @@
 "use client";
+
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import Circles from "../commonContent/Circles";
 import { client } from "@/sanity/lib/client";
 import { FaHeart, FaRegHeart } from "react-icons/fa";
+
+type Product = {
+  _id: string;
+  title: string;
+  description: string;
+  imageUrl: string;
+  price: number;
+  tags?: string[];
+  discountPercentage?: number;
+  isNew?: boolean;
+};
 
 export async function fetchProducts() {
   const query = `*[_type == "product"]{
@@ -21,20 +33,20 @@ export async function fetchProducts() {
   try {
     const products = await client.fetch(query);
     return products;
-  } catch (error) {
-    console.error("Error fetching products:", error);
+  } catch {
+    console.error("Error fetching products.");
     return [];
   }
 }
 
 export default function HeroCards() {
-  const [products, setProducts] = useState([]);
-  const [visibleCount, setVisibleCount] = useState(6);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [visibleCount, setVisibleCount] = useState(4);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null); // Renamed state for clarity
   const [isUserLoggedIn, setIsUserLoggedIn] = useState(false);
-  const [favourites, setFavourites] = useState([]);
-  const [cart, setCart] = useState([]);
+  const [favourites, setFavourites] = useState<Product[]>([]);
+  const [cart, setCart] = useState<Product[]>([]);
 
   useEffect(() => {
     const getProducts = async () => {
@@ -42,8 +54,8 @@ export default function HeroCards() {
         const data = await fetchProducts();
         setProducts(data);
         setLoading(false);
-      } catch (error) {
-        setError("Failed to load products.");
+      } catch {
+        setErrorMessage("Failed to load products.");
         setLoading(false);
       }
     };
@@ -52,11 +64,11 @@ export default function HeroCards() {
     const isLoggedIn = !!localStorage.getItem("userToken");
     setIsUserLoggedIn(isLoggedIn);
 
-    const storedCart = JSON.parse(localStorage.getItem("cart")) || [];
+    const storedCart = JSON.parse(localStorage.getItem("cart") || "[]");
     setCart(storedCart);
   }, []);
 
-  const handleFavouriteToggle = (product) => {
+  const handleFavouriteToggle = (product: Product) => {
     let updatedFavourites;
     if (favourites.some((fav) => fav._id === product._id)) {
       updatedFavourites = favourites.filter((fav) => fav._id !== product._id);
@@ -67,11 +79,10 @@ export default function HeroCards() {
     localStorage.setItem("favourites", JSON.stringify(updatedFavourites));
   };
 
-  const handleAddToCart = (product) => {
+  const handleAddToCart = (product: Product) => {
     if (!isUserLoggedIn) {
-      // Redirect to login or show modal
       alert("Please log in to add items to the cart.");
-      window.location.href = "/login"; // Redirect to login
+      window.location.href = "/login";
       return;
     }
 
@@ -81,10 +92,10 @@ export default function HeroCards() {
     alert(`${product.title} added to cart!`);
   };
 
-  const showMore = () => setVisibleCount((prevCount) => prevCount + 6);
-  const showLess = () => setVisibleCount(6);
+  const showMore = () => setVisibleCount((prevCount) => prevCount + 4);
+  const showLess = () => setVisibleCount(4);
 
-  const formatPrice = (price, discountPercentage) =>
+  const formatPrice = (price: number, discountPercentage?: number) =>
     discountPercentage
       ? (price * (1 - discountPercentage / 100)).toFixed(2)
       : price.toFixed(2);
@@ -98,7 +109,7 @@ export default function HeroCards() {
       </div>
 
       {loading && <div className="text-center text-gray-500">Loading products...</div>}
-      {error && <div className="text-center text-red-500">{error}</div>}
+      {errorMessage && <div className="text-center text-red-500">{errorMessage}</div>}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
         {products.slice(0, visibleCount).map((product) => (
@@ -161,7 +172,7 @@ export default function HeroCards() {
         ))}
       </div>
 
-      {products.length > 6 && (
+      {products.length > 4 && (
         <div className="flex justify-center gap-4 mt-8">
           {visibleCount < products.length ? (
             <button
