@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import Circles from "../commonContent/Circles";
-import { client } from "@/sanity/lib/client";
+import { client } from "@/sanity/lib/client"; // Ensure this client is correctly configured
 import { FaHeart, FaRegHeart } from "react-icons/fa";
 
 type Product = {
@@ -18,6 +18,7 @@ type Product = {
   isNew?: boolean;
 };
 
+// Fetch products from Sanity Studio
 export async function fetchProducts() {
   const query = `*[_type == "product"]{
     _id,
@@ -33,9 +34,9 @@ export async function fetchProducts() {
   try {
     const products = await client.fetch(query);
     return products;
-  } catch {
-    console.error("Error fetching products.");
-    return [];
+  } catch (error) {
+    console.error("Error fetching products:", error); // Log the actual error for debugging
+    throw new Error("Unable to fetch products. Please try again later.");
   }
 }
 
@@ -43,7 +44,7 @@ export default function HeroCards() {
   const [products, setProducts] = useState<Product[]>([]);
   const [visibleCount, setVisibleCount] = useState(4);
   const [loading, setLoading] = useState(true);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null); // Renamed state for clarity
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isUserLoggedIn, setIsUserLoggedIn] = useState(false);
   const [favourites, setFavourites] = useState<Product[]>([]);
   const [cart, setCart] = useState<Product[]>([]);
@@ -51,11 +52,16 @@ export default function HeroCards() {
   useEffect(() => {
     const getProducts = async () => {
       try {
+        setLoading(true);
         const data = await fetchProducts();
         setProducts(data);
-        setLoading(false);
-      } catch {
-        setErrorMessage("Failed to load products.");
+      } catch (error: unknown) {
+        if (error instanceof Error) {
+          setErrorMessage(error.message);
+        } else {
+          setErrorMessage("An unexpected error occurred.");
+        }
+      } finally {
         setLoading(false);
       }
     };
