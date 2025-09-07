@@ -6,16 +6,21 @@ import { PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import { createClient } from "next-sanity";
 
 const client = createClient({
-  projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID,
-  dataset: process.env.NEXT_PUBLIC_SANITY_DATASET,
+  projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!,
+  dataset: process.env.NEXT_PUBLIC_SANITY_DATASET!,
   apiVersion: "2023-01-01",
   token: process.env.NEXT_PUBLIC_SANITY_TOKEN,
   useCdn: false,
 });
 
-const ProductManagement = () => {
-  // Removed duplicate 'Product' type definition
+// ✅ Define Product type before using it
+interface Product {
+  _id: string;
+  title: string;
+  price: number;
+}
 
+const ProductManagement: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -37,16 +42,17 @@ const ProductManagement = () => {
     setLoading(true);
     try {
       const query = `*[_type == "product"]`;
-      const products = await client.fetch(query);
+      const products: Product[] = await client.fetch(query);
       setProducts(products);
     } catch (error) {
+      console.error(error);
       message.error("Failed to fetch products.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleAddOrEdit = async (values : any) => {
+  const handleAddOrEdit = async (values: Omit<Product, "_id">) => {
     setLoading(true);
     try {
       if (currentProduct) {
@@ -65,19 +71,21 @@ const ProductManagement = () => {
       form.resetFields();
       setIsModalVisible(false);
     } catch (error) {
+      console.error(error);
       message.error("Failed to save the product.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDelete = async (id : any) => {
+  const handleDelete = async (id: string) => {
     setLoading(true);
     try {
       await client.delete(id);
       message.success("Product deleted successfully!");
       fetchProducts();
     } catch (error) {
+      console.error(error);
       message.error("Failed to delete the product.");
     } finally {
       setLoading(false);
@@ -93,23 +101,7 @@ const ProductManagement = () => {
     }
   };
 
-  interface Product {
-    _id: string;
-    title: string;
-    price: number;
-    [key: string]: any;
-  }
-
-  interface ProductTableRecord extends Product {}
-
-  interface ProductTableColumn {
-    title: string;
-    dataIndex?: string;
-    key: string;
-    render?: (value: any, record: ProductTableRecord, index: number) => React.ReactNode;
-  }
-
-  const columns: ProductTableColumn[] = [
+  const columns = [
     {
       title: "Title",
       dataIndex: "title",
@@ -124,7 +116,7 @@ const ProductManagement = () => {
     {
       title: "Actions",
       key: "actions",
-      render: (_: any, record: ProductTableRecord) => (
+      render: (_: unknown, record: Product) => (
         <div className="flex gap-2">
           <Button
             icon={<EditOutlined />}
@@ -203,9 +195,10 @@ const ProductManagement = () => {
       />
       <Modal
         title={currentProduct ? "Edit Product" : "Add Product"}
-        open={isModalVisible} // Updated from `visible` to `open`
+        open={isModalVisible} // ✅ AntD v5 uses `open`
         onCancel={() => setIsModalVisible(false)}
         onOk={() => form.submit()}
+        confirmLoading={loading}
       >
         <Form
           form={form}
@@ -228,11 +221,7 @@ const ProductManagement = () => {
             label="Price"
             rules={[{ required: true, message: "Please enter a price" }]}
           >
-            <InputNumber
-              placeholder="Product Price"
-              min={0}
-              className="w-full"
-            />
+            <InputNumber placeholder="Product Price" min={0} className="w-full" />
           </Form.Item>
         </Form>
       </Modal>
