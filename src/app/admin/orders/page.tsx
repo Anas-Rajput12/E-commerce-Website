@@ -14,10 +14,19 @@ const client = createClient({
 });
 
 const AdminUsers = () => {
-  const [users, setUsers] = useState([]);
+  type User = {
+    _id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    role: string;
+    isActive: boolean;
+  };
+  
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -41,7 +50,7 @@ const AdminUsers = () => {
     }
   };
 
-  const handleAddOrEdit = async (values) => {
+  const handleAddOrEdit = async (values : any) => {
     setLoading(true);
     try {
       if (currentUser) {
@@ -66,7 +75,7 @@ const AdminUsers = () => {
     }
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (id : any) => {
     setLoading(true);
     try {
       await client.delete(id);
@@ -87,7 +96,14 @@ const AdminUsers = () => {
     }
   };
 
-  const columns = [
+  interface ColumnType {
+    title: string;
+    dataIndex?: string;
+    key: string;
+    render?: (value: any, record?: User) => React.ReactNode;
+  }
+
+  const columns: ColumnType[] = [
     {
       title: "Email",
       dataIndex: "email",
@@ -112,19 +128,21 @@ const AdminUsers = () => {
       title: "Active",
       dataIndex: "isActive",
       key: "isActive",
-      render: (isActive) => (isActive ? "Yes" : "No"),
+      render: (isActive: boolean) => (isActive ? "Yes" : "No"),
     },
     {
       title: "Actions",
       key: "actions",
-      render: (_, record) => (
+      render: (_: any, record?: User) => (
         <div className="flex gap-2">
           <Button
             icon={<EditOutlined />}
             onClick={() => {
-              setCurrentUser(record);
-              form.setFieldsValue(record);
-              setIsModalVisible(true);
+              if (record) {
+                setCurrentUser(record);
+                form.setFieldsValue(record);
+                setIsModalVisible(true);
+              }
             }}
           >
             Edit
@@ -132,7 +150,7 @@ const AdminUsers = () => {
           <Button
             icon={<DeleteOutlined />}
             danger
-            onClick={() => handleDelete(record._id)}
+            onClick={() => record && handleDelete(record._id)}
           >
             Delete
           </Button>
