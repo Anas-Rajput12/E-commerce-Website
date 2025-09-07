@@ -1,7 +1,16 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Table, Button, Modal, Form, Input, Select, Switch, message } from "antd";
+import {
+  Table,
+  Button,
+  Modal,
+  Form,
+  Input,
+  Select,
+  Switch,
+  message,
+} from "antd";
 import { PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import { createClient } from "next-sanity";
 
@@ -19,7 +28,7 @@ const AdminUsers = () => {
     email: string;
     firstName: string;
     lastName: string;
-    role: string;
+    role: "user" | "admin";
     isActive: boolean;
   };
 
@@ -41,16 +50,16 @@ const AdminUsers = () => {
     setLoading(true);
     try {
       const query = `*[_type == "user"]`;
-      const users = await client.fetch(query);
+      const users: User[] = await client.fetch(query);
       setUsers(users);
-    } catch (error) {
+    } catch {
       message.error("Failed to fetch users.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleAddOrEdit = async (values: any) => {
+  const handleAddOrEdit = async (values: Omit<User, "_id">) => {
     setLoading(true);
     try {
       if (currentUser) {
@@ -68,7 +77,7 @@ const AdminUsers = () => {
       fetchUsers();
       form.resetFields();
       setIsModalOpen(false);
-    } catch (error) {
+    } catch {
       message.error("Failed to save the user.");
     } finally {
       setLoading(false);
@@ -81,7 +90,7 @@ const AdminUsers = () => {
       await client.delete(id);
       message.success("User deleted successfully!");
       fetchUsers();
-    } catch (error) {
+    } catch {
       message.error("Failed to delete the user.");
     } finally {
       setLoading(false);
@@ -126,7 +135,7 @@ const AdminUsers = () => {
     {
       title: "Actions",
       key: "actions",
-      render: (_: any, record: User) => (
+      render: (_: unknown, record: User) => (
         <div className="flex gap-2">
           <Button
             icon={<EditOutlined />}
