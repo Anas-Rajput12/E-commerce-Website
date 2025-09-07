@@ -4,25 +4,27 @@ import React, { useState, useEffect } from "react";
 import { Table, Button, Modal, Form, Input, message, Select } from "antd";
 import { PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import { createClient } from "next-sanity";
+import Image from "next/image";
 
 const client = createClient({
-  projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID,
-  dataset: process.env.NEXT_PUBLIC_SANITY_DATASET,
+  projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!,
+  dataset: process.env.NEXT_PUBLIC_SANITY_DATASET!,
   apiVersion: "2025-01-20",
   token: process.env.NEXT_PUBLIC_SANITY_TOKEN,
   useCdn: true,
 });
 
-const CategoryManagement = () => {
-  type Category = {
-    _id: string;
-    name: string;
-    description: string;
-    status: string;
-    image?: string;
-    [key: string]: any;
-  };
+type Category = {
+  _id: string;
+  name: string;
+  description: string;
+  status: "active" | "inactive";
+  image?: string;
+};
 
+type CategoryFormValues = Omit<Category, "_id">;
+
+const CategoryManagement: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -31,7 +33,7 @@ const CategoryManagement = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const [form] = Form.useForm();
+  const [form] = Form.useForm<CategoryFormValues>();
 
   useEffect(() => {
     if (isAuthenticated) fetchCategories();
@@ -41,16 +43,16 @@ const CategoryManagement = () => {
     setLoading(true);
     try {
       const query = `*[_type == "category"]`;
-      const categories = await client.fetch(query);
-      setCategories(categories);
-    } catch (error) {
+      const result: Category[] = await client.fetch(query);
+      setCategories(result);
+    } catch {
       message.error("Failed to fetch categories.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleAddOrEdit = async (values: any) => {
+  const handleAddOrEdit = async (values: CategoryFormValues) => {
     setLoading(true);
     try {
       if (currentCategory) {
@@ -63,10 +65,10 @@ const CategoryManagement = () => {
         });
         message.success("Category added successfully!");
       }
-      fetchCategories();
+      await fetchCategories();
       form.resetFields();
       setIsModalOpen(false);
-    } catch (error) {
+    } catch {
       message.error("Failed to save the category.");
     } finally {
       setLoading(false);
@@ -78,8 +80,8 @@ const CategoryManagement = () => {
     try {
       await client.delete(id);
       message.success("Category deleted successfully!");
-      fetchCategories();
-    } catch (error) {
+      await fetchCategories();
+    } catch {
       message.error("Failed to delete the category.");
     } finally {
       setLoading(false);
@@ -101,7 +103,13 @@ const CategoryManagement = () => {
       key: "image",
       render: (image: string) =>
         image ? (
-          <img src={image} alt="Category" className="w-16 h-16 object-cover" />
+          <Image
+            src={image}
+            alt="Category"
+            width={64}
+            height={64}
+            className="object-cover rounded"
+          />
         ) : (
           "No Image"
         ),
@@ -124,7 +132,7 @@ const CategoryManagement = () => {
     {
       title: "Actions",
       key: "actions",
-      render: (_: any, record: Category) => (
+      render: (_: unknown, record: Category) => (
         <div className="flex gap-2">
           <Button
             icon={<EditOutlined />}
@@ -209,7 +217,7 @@ const CategoryManagement = () => {
         onOk={() => form.submit()}
         confirmLoading={loading}
       >
-        <Form
+        <Form<CategoryFormValues>
           form={form}
           layout="vertical"
           onFinish={handleAddOrEdit}
