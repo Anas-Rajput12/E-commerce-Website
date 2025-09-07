@@ -1,14 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation"; // ✅ useRouter from next/navigation for App Router
+import { useRouter } from "next/navigation";
 import { Card, Form, Input, Button, message } from "antd";
+
+// ✅ Define a type for login form values
+interface LoginFormValues {
+  email: string;
+  password: string;
+}
 
 const LoginPage = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = (values: any) => {
+  const handleLogin = (values: LoginFormValues) => {
     setLoading(true);
 
     // Hardcoded email and password for admin
@@ -31,7 +37,7 @@ const LoginPage = () => {
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <Card className="w-full max-w-md p-6 shadow-lg rounded-2xl">
         <h1 className="text-2xl font-bold text-center mb-4">Admin Login</h1>
-        <Form
+        <Form<LoginFormValues> // ✅ tell Form about the type
           name="login"
           layout="vertical"
           onFinish={handleLogin}
