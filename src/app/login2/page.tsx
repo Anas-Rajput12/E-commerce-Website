@@ -1,14 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation"; // ✅ useRouter from next/navigation for App Router
 import { Card, Form, Input, Button, message } from "antd";
 
 const LoginPage = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = (values : any) => {
+  const handleLogin = (values: any) => {
     setLoading(true);
 
     // Hardcoded email and password for admin
@@ -19,7 +19,7 @@ const LoginPage = () => {
 
     if (email === adminEmail && password === adminPassword) {
       message.success("Login successful!");
-      router.push("/admin/analytics"); // Redirect to admin dashboard
+      router.push("/admin/analytics"); // ✅ redirect works properly in App Router
     } else {
       message.error("Invalid email or password");
     }
