@@ -4,7 +4,6 @@ import React, { useEffect, useState } from "react";
 import { Card, Statistic, Row, Col, Table, message, Button } from "antd";
 import { createClient } from "next-sanity";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
-import { useRouter } from "next/navigation";
 
 const client = createClient({
   projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID,
@@ -16,13 +15,20 @@ const client = createClient({
 
 const AdminAnalytics = () => {
   const [analyticsData, setAnalyticsData] = useState([]);
-  const [ordersSummary, setOrdersSummary] = useState([]);
+  type Order = {
+    _id: string;
+    customerName: string;
+    orderDate: string;
+    status: string;
+    totalAmount: number;
+  };
+  
+  const [ordersSummary, setOrdersSummary] = useState<Order[]>([]);
   const [usersCount, setUsersCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const router = useRouter();
 
   useEffect(() => {
     fetchAnalyticsData();
