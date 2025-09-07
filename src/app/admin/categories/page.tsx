@@ -25,7 +25,7 @@ const CategoryManagement = () => {
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
-  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentCategory, setCurrentCategory] = useState<Category | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [email, setEmail] = useState("");
@@ -50,15 +50,13 @@ const CategoryManagement = () => {
     }
   };
 
-  const handleAddOrEdit = async (values : any) => {
+  const handleAddOrEdit = async (values: any) => {
     setLoading(true);
     try {
       if (currentCategory) {
-        // Update existing category
         await client.patch(currentCategory._id).set(values).commit();
         message.success("Category updated successfully!");
       } else {
-        // Create a new category
         await client.create({
           _type: "category",
           ...values,
@@ -67,7 +65,7 @@ const CategoryManagement = () => {
       }
       fetchCategories();
       form.resetFields();
-      setIsModalVisible(false);
+      setIsModalOpen(false);
     } catch (error) {
       message.error("Failed to save the category.");
     } finally {
@@ -75,7 +73,7 @@ const CategoryManagement = () => {
     }
   };
 
-  const handleDelete = async (id : any) => {
+  const handleDelete = async (id: string) => {
     setLoading(true);
     try {
       await client.delete(id);
@@ -96,18 +94,7 @@ const CategoryManagement = () => {
     }
   };
 
-  // Removed duplicate Category interface declaration
-
-  interface CategoryTableRecord extends Category {}
-
-  interface CategoryColumn {
-    title: string;
-    dataIndex?: keyof CategoryTableRecord;
-    key: string;
-    render?: (value: any, record?: CategoryTableRecord) => React.ReactNode;
-  }
-
-  const columns: CategoryColumn[] = [
+  const columns = [
     {
       title: "Image",
       dataIndex: "image",
@@ -137,16 +124,14 @@ const CategoryManagement = () => {
     {
       title: "Actions",
       key: "actions",
-      render: (_: any, record?: CategoryTableRecord) => (
+      render: (_: any, record: Category) => (
         <div className="flex gap-2">
           <Button
             icon={<EditOutlined />}
             onClick={() => {
-              if (record) {
-                setCurrentCategory(record);
-                form.setFieldsValue(record);
-                setIsModalVisible(true);
-              }
+              setCurrentCategory(record);
+              form.setFieldsValue(record);
+              setIsModalOpen(true);
             }}
           >
             Edit
@@ -154,7 +139,7 @@ const CategoryManagement = () => {
           <Button
             icon={<DeleteOutlined />}
             danger
-            onClick={() => record && handleDelete(record._id)}
+            onClick={() => handleDelete(record._id)}
           >
             Delete
           </Button>
@@ -204,7 +189,7 @@ const CategoryManagement = () => {
           onClick={() => {
             setCurrentCategory(null);
             form.resetFields();
-            setIsModalVisible(true);
+            setIsModalOpen(true);
           }}
         >
           Add Category
@@ -219,9 +204,10 @@ const CategoryManagement = () => {
       />
       <Modal
         title={currentCategory ? "Edit Category" : "Add Category"}
-        visible={isModalVisible}
-        onCancel={() => setIsModalVisible(false)}
+        open={isModalOpen}
+        onCancel={() => setIsModalOpen(false)}
         onOk={() => form.submit()}
+        confirmLoading={loading}
       >
         <Form
           form={form}
