@@ -203,7 +203,7 @@ export default function Home() {
               currency: "usd",
             }}
           >
-            <CheckoutPage amount={cartAmount} currency="usd" />
+            <CheckoutPage amount={cartAmount} />
           </Elements>
         </div>
       )}
