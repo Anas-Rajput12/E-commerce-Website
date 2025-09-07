@@ -6,6 +6,14 @@ import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import { useRouter } from "next/navigation";
 
+// ✅ Define CartItem type
+interface CartItem {
+  price: number;
+  discountPercentage?: number;
+  quantity: number;
+  [key: string]: unknown; // allow extra fields
+}
+
 // Load Stripe once
 const stripePromise = loadStripe(
   process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY || ""
@@ -30,13 +38,13 @@ export default function Home() {
         const storedCart = localStorage.getItem("cart");
         if (!storedCart) return setIsValidAmount(false);
 
-        const cart = JSON.parse(storedCart);
+        const cart: CartItem[] = JSON.parse(storedCart);
         if (!Array.isArray(cart)) return setIsValidAmount(false);
 
         // Calculate total amount
-        const totalAmount = cart.reduce((total: number, item: any) => {
+        const totalAmount = cart.reduce((total: number, item: CartItem) => {
           const price = Number(item.price) || 0;
-          const discount = Number(item.discountPercentage) / 100 || 0;
+          const discount = (Number(item.discountPercentage) || 0) / 100;
           const quantity = Number(item.quantity) || 1;
 
           if (price <= 0 || quantity < 1) return total;
