@@ -14,10 +14,19 @@ const client = createClient({
 });
 
 const CategoryManagement = () => {
-  const [categories, setCategories] = useState([]);
+  type Category = {
+    _id: string;
+    name: string;
+    description: string;
+    status: string;
+    image?: string;
+    [key: string]: any;
+  };
+
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [currentCategory, setCurrentCategory] = useState(null);
+  const [currentCategory, setCurrentCategory] = useState<Category | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -41,7 +50,7 @@ const CategoryManagement = () => {
     }
   };
 
-  const handleAddOrEdit = async (values) => {
+  const handleAddOrEdit = async (values : any) => {
     setLoading(true);
     try {
       if (currentCategory) {
@@ -66,7 +75,7 @@ const CategoryManagement = () => {
     }
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (id : any) => {
     setLoading(true);
     try {
       await client.delete(id);
@@ -87,12 +96,23 @@ const CategoryManagement = () => {
     }
   };
 
-  const columns = [
+  // Removed duplicate Category interface declaration
+
+  interface CategoryTableRecord extends Category {}
+
+  interface CategoryColumn {
+    title: string;
+    dataIndex?: keyof CategoryTableRecord;
+    key: string;
+    render?: (value: any, record?: CategoryTableRecord) => React.ReactNode;
+  }
+
+  const columns: CategoryColumn[] = [
     {
       title: "Image",
       dataIndex: "image",
       key: "image",
-      render: (image) =>
+      render: (image: string) =>
         image ? (
           <img src={image} alt="Category" className="w-16 h-16 object-cover" />
         ) : (
@@ -117,14 +137,16 @@ const CategoryManagement = () => {
     {
       title: "Actions",
       key: "actions",
-      render: (_, record) => (
+      render: (_: any, record?: CategoryTableRecord) => (
         <div className="flex gap-2">
           <Button
             icon={<EditOutlined />}
             onClick={() => {
-              setCurrentCategory(record);
-              form.setFieldsValue(record);
-              setIsModalVisible(true);
+              if (record) {
+                setCurrentCategory(record);
+                form.setFieldsValue(record);
+                setIsModalVisible(true);
+              }
             }}
           >
             Edit
@@ -132,7 +154,7 @@ const CategoryManagement = () => {
           <Button
             icon={<DeleteOutlined />}
             danger
-            onClick={() => handleDelete(record._id)}
+            onClick={() => record && handleDelete(record._id)}
           >
             Delete
           </Button>
