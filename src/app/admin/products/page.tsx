@@ -14,10 +14,12 @@ const client = createClient({
 });
 
 const ProductManagement = () => {
-  const [products, setProducts] = useState([]);
+  // Removed duplicate 'Product' type definition
+
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [currentProduct, setCurrentProduct] = useState(null);
+  const [currentProduct, setCurrentProduct] = useState<Product | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -44,7 +46,7 @@ const ProductManagement = () => {
     }
   };
 
-  const handleAddOrEdit = async (values) => {
+  const handleAddOrEdit = async (values : any) => {
     setLoading(true);
     try {
       if (currentProduct) {
@@ -69,7 +71,7 @@ const ProductManagement = () => {
     }
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (id : any) => {
     setLoading(true);
     try {
       await client.delete(id);
@@ -91,7 +93,23 @@ const ProductManagement = () => {
     }
   };
 
-  const columns = [
+  interface Product {
+    _id: string;
+    title: string;
+    price: number;
+    [key: string]: any;
+  }
+
+  interface ProductTableRecord extends Product {}
+
+  interface ProductTableColumn {
+    title: string;
+    dataIndex?: string;
+    key: string;
+    render?: (value: any, record: ProductTableRecord, index: number) => React.ReactNode;
+  }
+
+  const columns: ProductTableColumn[] = [
     {
       title: "Title",
       dataIndex: "title",
@@ -101,12 +119,12 @@ const ProductManagement = () => {
       title: "Price",
       dataIndex: "price",
       key: "price",
-      render: (price) => `$${price}`,
+      render: (price: number) => `$${price}`,
     },
     {
       title: "Actions",
       key: "actions",
-      render: (_, record) => (
+      render: (_: any, record: ProductTableRecord) => (
         <div className="flex gap-2">
           <Button
             icon={<EditOutlined />}
