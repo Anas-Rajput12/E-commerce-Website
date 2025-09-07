@@ -1,4 +1,3 @@
-// Ensure this is a client component
 "use client";
 
 import { useState, useEffect } from "react";
@@ -7,23 +6,20 @@ import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import { useRouter } from "next/navigation";
 
-// Ensure the Stripe public key is defined
-if (!process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY) {
-  throw new Error("NEXT_PUBLIC_STRIPE_PUBLIC_KEY is not defined");
-}
-
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY);
+// Load Stripe once
+const stripePromise = loadStripe(
+  process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY || ""
+);
 
 export default function Home() {
-  const [cartAmount, setCartAmount] = useState<number>(0); // Amount in dollars
-  const [cartAmountCents, setCartAmountCents] = useState<number>(0); // Amount in cents for Stripe
+  const [cartAmount, setCartAmount] = useState<number>(0); // dollars
   const [isValidAmount, setIsValidAmount] = useState<boolean>(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     phone: "",
     address: "",
-    paymentMethod: "cod", // Default to cash on delivery
+    paymentMethod: "cod", // default
   });
   const [isOrderPlaced, setIsOrderPlaced] = useState(false);
   const router = useRouter();
@@ -32,44 +28,31 @@ export default function Home() {
     const fetchCart = () => {
       try {
         const storedCart = localStorage.getItem("cart");
-        if (!storedCart) {
-          console.warn("Cart is empty or not found in localStorage.");
-          setIsValidAmount(false);
-          return;
-        }
+        if (!storedCart) return setIsValidAmount(false);
 
         const cart = JSON.parse(storedCart);
-        if (!Array.isArray(cart)) {
-          console.error("Cart data is not valid:", cart);
-          setIsValidAmount(false);
-          return;
-        }
+        if (!Array.isArray(cart)) return setIsValidAmount(false);
 
         // Calculate total amount
         const totalAmount = cart.reduce((total: number, item: any) => {
-          const price = parseFloat(item.price || 0);
-          const discount = parseFloat(item.discountPercentage || 0) / 100;
-          const quantity = parseInt(item.quantity || 1, 10);
+          const price = Number(item.price) || 0;
+          const discount = Number(item.discountPercentage) / 100 || 0;
+          const quantity = Number(item.quantity) || 1;
 
-          if (isNaN(price) || isNaN(quantity) || price < 0 || quantity < 1) {
-            console.error("Invalid cart item:", item);
-            return total;
-          }
+          if (price <= 0 || quantity < 1) return total;
 
           const discountedPrice = discount > 0 ? price * (1 - discount) : price;
           return total + discountedPrice * quantity;
         }, 0);
 
-        if (totalAmount > 0 && !isNaN(totalAmount)) {
-          setCartAmount(parseFloat(totalAmount.toFixed(2))); // Save in dollars
-          setCartAmountCents(Math.round(totalAmount * 100)); // Convert to cents for Stripe
+        if (totalAmount > 0 && Number.isFinite(totalAmount)) {
+          setCartAmount(Number(totalAmount.toFixed(2)));
           setIsValidAmount(true);
         } else {
-          console.error("Calculated invalid cart amount:", totalAmount);
           setIsValidAmount(false);
         }
       } catch (error) {
-        console.error("Error parsing cart data:", error);
+        console.error("Error parsing cart:", error);
         setIsValidAmount(false);
       }
     };
@@ -77,27 +60,31 @@ export default function Home() {
     fetchCart();
   }, []);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (formData.paymentMethod === "cod") {
-      // Handle COD order placement
-      console.log("Order details (COD):", formData);
+      console.log("Order placed (COD):", formData);
       setIsOrderPlaced(true);
-      // Redirect to a confirmation page or reset the form
-      setTimeout(() => {
-        router.push("/order-confirmation"); // Example redirection
-      }, 2000);
+
+      // Reset form
+      setFormData({
+        name: "",
+        email: "",
+        phone: "",
+        address: "",
+        paymentMethod: "cod",
+      });
+
+      setTimeout(() => router.push("/order-confirmation"), 1500);
     } else {
-      // Handle online payment
       console.log("Proceeding to online payment with details:", formData);
     }
   };
@@ -114,7 +101,9 @@ export default function Home() {
   if (isOrderPlaced) {
     return (
       <div className="text-center mt-10">
-        <p className="text-green-500 font-semibold">Order placed successfully!</p>
+        <p className="text-green-500 font-semibold">
+          Order placed successfully!
+        </p>
         <p>Thank you for shopping with us.</p>
       </div>
     );
@@ -136,7 +125,7 @@ export default function Home() {
             value={formData.name}
             onChange={handleInputChange}
             required
-            className="w-full p-2 border rounded"
+            className="w-full p-2 border rounded text-black"
           />
         </div>
         <div className="mb-4">
@@ -147,7 +136,7 @@ export default function Home() {
             value={formData.email}
             onChange={handleInputChange}
             required
-            className="w-full p-2 border rounded"
+            className="w-full p-2 border rounded text-black"
           />
         </div>
         <div className="mb-4">
@@ -158,18 +147,20 @@ export default function Home() {
             value={formData.phone}
             onChange={handleInputChange}
             required
-            className="w-full p-2 border rounded"
+            className="w-full p-2 border rounded text-black"
           />
         </div>
         <div className="mb-4">
-          <label className="block text-sm font-bold mb-2">Shipping Address</label>
+          <label className="block text-sm font-bold mb-2">
+            Shipping Address
+          </label>
           <input
             type="text"
             name="address"
             value={formData.address}
             onChange={handleInputChange}
             required
-            className="w-full p-2 border rounded"
+            className="w-full p-2 border rounded text-black"
           />
         </div>
         <div className="mb-4">
@@ -178,7 +169,7 @@ export default function Home() {
             name="paymentMethod"
             value={formData.paymentMethod}
             onChange={handleInputChange}
-            className="w-full p-2 border rounded"
+            className="w-full p-2 border rounded text-black"
           >
             <option value="cod">Cash on Delivery</option>
             <option value="online">Online Payment</option>
@@ -189,7 +180,9 @@ export default function Home() {
           type="submit"
           className="w-full p-2 bg-blue-600 text-white rounded hover:bg-blue-700"
         >
-          {formData.paymentMethod === "cod" ? "Place Order" : "Proceed to Payment"}
+          {formData.paymentMethod === "cod"
+            ? "Place Order"
+            : "Proceed to Payment"}
         </button>
       </form>
 
@@ -199,7 +192,7 @@ export default function Home() {
             stripe={stripePromise}
             options={{
               mode: "payment",
-              amount: cartAmountCents, // Pass amount in cents to Stripe
+              amount: Math.round(cartAmount * 100), // cents
               currency: "usd",
             }}
           >
