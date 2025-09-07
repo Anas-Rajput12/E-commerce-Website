@@ -22,10 +22,10 @@ const AdminUsers = () => {
     role: string;
     isActive: boolean;
   };
-  
+
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
-  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [email, setEmail] = useState("");
@@ -50,15 +50,15 @@ const AdminUsers = () => {
     }
   };
 
-  const handleAddOrEdit = async (values : any) => {
+  const handleAddOrEdit = async (values: any) => {
     setLoading(true);
     try {
       if (currentUser) {
-        // Update existing user
+        // Update user
         await client.patch(currentUser._id).set(values).commit();
         message.success("User updated successfully!");
       } else {
-        // Create a new user
+        // Create user
         await client.create({
           _type: "user",
           ...values,
@@ -67,7 +67,7 @@ const AdminUsers = () => {
       }
       fetchUsers();
       form.resetFields();
-      setIsModalVisible(false);
+      setIsModalOpen(false);
     } catch (error) {
       message.error("Failed to save the user.");
     } finally {
@@ -75,7 +75,7 @@ const AdminUsers = () => {
     }
   };
 
-  const handleDelete = async (id : any) => {
+  const handleDelete = async (id: string) => {
     setLoading(true);
     try {
       await client.delete(id);
@@ -96,14 +96,7 @@ const AdminUsers = () => {
     }
   };
 
-  interface ColumnType {
-    title: string;
-    dataIndex?: string;
-    key: string;
-    render?: (value: any, record?: User) => React.ReactNode;
-  }
-
-  const columns: ColumnType[] = [
+  const columns = [
     {
       title: "Email",
       dataIndex: "email",
@@ -133,16 +126,14 @@ const AdminUsers = () => {
     {
       title: "Actions",
       key: "actions",
-      render: (_: any, record?: User) => (
+      render: (_: any, record: User) => (
         <div className="flex gap-2">
           <Button
             icon={<EditOutlined />}
             onClick={() => {
-              if (record) {
-                setCurrentUser(record);
-                form.setFieldsValue(record);
-                setIsModalVisible(true);
-              }
+              setCurrentUser(record);
+              form.setFieldsValue(record);
+              setIsModalOpen(true);
             }}
           >
             Edit
@@ -150,7 +141,7 @@ const AdminUsers = () => {
           <Button
             icon={<DeleteOutlined />}
             danger
-            onClick={() => record && handleDelete(record._id)}
+            onClick={() => handleDelete(record._id)}
           >
             Delete
           </Button>
@@ -200,7 +191,7 @@ const AdminUsers = () => {
           onClick={() => {
             setCurrentUser(null);
             form.resetFields();
-            setIsModalVisible(true);
+            setIsModalOpen(true);
           }}
         >
           Add User
@@ -215,9 +206,10 @@ const AdminUsers = () => {
       />
       <Modal
         title={currentUser ? "Edit User" : "Add User"}
-        visible={isModalVisible}
-        onCancel={() => setIsModalVisible(false)}
+        open={isModalOpen}
+        onCancel={() => setIsModalOpen(false)}
         onOk={() => form.submit()}
+        confirmLoading={loading}
       >
         <Form
           form={form}
