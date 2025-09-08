@@ -1,6 +1,8 @@
+"use client";
+
 import { client } from "@/sanity/lib/client";
-import React from "react";
- // ✅ yahan se import
+import React, { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 
 async function fetchProductById(id: string) {
   const query = `
@@ -18,14 +20,17 @@ async function fetchProductById(id: string) {
   return client.fetch(query, { id });
 }
 
-interface ProductProps {
-  params: { id: string };
-}
+export default function ProductDetails() {
+  const { id } = useParams<{ id: string }>(); // ✅ get id from URL
+  const [product, setProduct] = useState<any>(null);
 
-export default async function ProductDetails({ params }: ProductProps) {
-  const product = await fetchProductById(params.id);
+  useEffect(() => {
+    if (id) {
+      fetchProductById(id).then((data) => setProduct(data));
+    }
+  }, [id]);
 
-  if (!product) return <p className="p-6">Product not found</p>;
+  if (!product) return <p className="p-6">Loading...</p>;
 
   return (
     <div className="container mx-auto p-6">
@@ -52,7 +57,11 @@ export default async function ProductDetails({ params }: ProductProps) {
                   ${product.price.toFixed(2)}
                 </span>
                 <span className="text-2xl text-green-600 font-semibold">
-                  ${(product.price * (1 - product.discountPercentage / 100)).toFixed(2)}
+                  $
+                  {(
+                    product.price *
+                    (1 - product.discountPercentage / 100)
+                  ).toFixed(2)}
                 </span>
               </>
             ) : (
