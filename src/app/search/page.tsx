@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from "react";
 import groq from "groq";
 import Image from "next/image";
-import { useSearchParams } from "next/navigation";
 import { client } from "@/sanity/lib/client";
 import Header from "@/components/header/Header";
 
@@ -19,20 +18,21 @@ interface Product {
 }
 
 const SearchPage: React.FC = () => {
-  const searchParams = useSearchParams();
-  const searchQuery = searchParams.get("query") || "";
+  const [query, setQuery] = useState<string>("");       // Controlled input
+  const [searchTerm, setSearchTerm] = useState<string>(""); // Term to fetch
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!searchTerm.trim()) return;
+
     const fetchProducts = async () => {
-      if (!searchQuery.trim()) return;
       setLoading(true);
       setError(null);
 
       const searchQueryStr = groq`
-        *[_type == "product" && (title match "${searchQuery}*" || "${searchQuery}" in tags)] {
+        *[_type == "product" && (title match "${searchTerm}*" || "${searchTerm}" in tags)] {
           _id,
           title,
           description,
@@ -56,22 +56,47 @@ const SearchPage: React.FC = () => {
     };
 
     fetchProducts();
-  }, [searchQuery]);
+  }, [searchTerm]);
+
+  const handleSearch = () => {
+    setSearchTerm(query.trim());
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
+
       <div className="max-w-6xl mx-auto px-4 py-8">
         <h1 className="text-3xl font-semibold text-gray-800 mb-6">
-          Search Results for &quot;{searchQuery}&quot;
+          Product Search
         </h1>
 
+        {/* Search Input */}
+        <div className="flex mb-6">
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search products..."
+            className="flex-1 border border-gray-300 rounded-l-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <button
+            onClick={handleSearch}
+            className="bg-blue-600 text-white px-4 py-2 rounded-r-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            Search
+          </button>
+        </div>
+
+        {/* Loading */}
         {loading && <p className="text-gray-500 text-center">Loading...</p>}
 
+        {/* Error */}
         {error && (
           <p className="text-red-500 text-center mt-4">{error}</p>
         )}
 
+        {/* Products Grid */}
         {products.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {products.map((product) => (
@@ -128,9 +153,10 @@ const SearchPage: React.FC = () => {
           </div>
         )}
 
-        {!loading && !error && products.length === 0 && searchQuery.trim() && (
+        {/* No results */}
+        {!loading && !error && products.length === 0 && searchTerm && (
           <p className="text-center text-gray-500 mt-8">
-            No products found for &quot;{searchQuery}&quot;.
+            No products found for &quot;{searchTerm}&quot;.
           </p>
         )}
       </div>
