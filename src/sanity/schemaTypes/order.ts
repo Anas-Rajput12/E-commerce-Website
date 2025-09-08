@@ -7,13 +7,13 @@ export default {
         name: "customerName",
         title: "Customer Name",
         type: "string",
-        validation: (Rule) => Rule.required(),
+        validation: (Rule : any) => Rule.required(),
       },
       {
         name: "orderDate",
         title: "Order Date",
         type: "datetime",
-        validation: (Rule) => Rule.required(),
+        validation: (Rule : any) => Rule.required(),
       },
       {
         name: "status",
@@ -22,13 +22,13 @@ export default {
         options: {
           list: ["pending", "shipped", "delivered", "cancelled"],
         },
-        validation: (Rule) => Rule.required(),
+        validation: (Rule : any) => Rule.required(),
       },
       {
         name: "totalAmount",
         title: "Total Amount",
         type: "number",
-        validation: (Rule) => Rule.required().min(0),
+        validation: (Rule : any) => Rule.required().min(0),
       },
       {
         name: "user",
