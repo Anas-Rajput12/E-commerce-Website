@@ -8,25 +8,25 @@ export const product = defineType({
         {
             name: "title",
             title: "Title",
-            validation: (rule) => rule.required(),
+            validation: (rule : any) => rule.required(),
             type: "string"
         },
         {
             name:"description",
             type:"text",
-            validation: (rule) => rule.required(),
+            validation: (rule : any) => rule.required(),
             title:"Description",
         },
         {
             name: "productImage",
             type: "image",
-            validation: (rule) => rule.required(),
+            validation: (rule : any) => rule.required(),
             title: "Product Image"
         },
         {
             name: "price",
             type: "number",
-            validation: (rule) => rule.required(),
+            validation: (rule : any) => rule.required(),
             title: "Price",
         },
         {
