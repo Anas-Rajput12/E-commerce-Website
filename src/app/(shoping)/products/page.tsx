@@ -6,7 +6,7 @@ import Link from "next/link";
 import { client } from "@/sanity/lib/client";
 import Circles from "@/components/commonContent/Circles";
 
-// Define the type for a product
+// Define types
 type Product = {
   _id: string;
   title: string;
@@ -19,13 +19,12 @@ type Product = {
   category: string;
 };
 
-// Define the type for a category
 type Category = {
   title: string;
 };
 
-// Data fetching function
-export async function fetchProductsAndCategories() {
+// Data fetching function (NOT exported)
+async function fetchProductsAndCategories() {
   const query = `{
     "products": *[_type == "product"]{
       _id,
@@ -51,7 +50,7 @@ export async function fetchProductsAndCategories() {
   }
 }
 
-export default function HeroCards() {
+export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<string[]>(["All"]);
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -65,8 +64,7 @@ export default function HeroCards() {
         const { products, categories } = await fetchProductsAndCategories();
         setProducts(products || []);
         setCategories(["All", ...categories.map((cat: Category) => cat.title)]);
-      } catch (err) {
-        console.error("Error fetching data:", err);
+      } catch {
         setError("Failed to load products and categories.");
       } finally {
         setLoading(false);
@@ -76,13 +74,13 @@ export default function HeroCards() {
     getData();
   }, []);
 
-  // Filter products by selected category
+  // Filter products
   const filteredProducts =
     selectedCategory === "All"
       ? products
-      : products.filter((product) => product.category === selectedCategory);
+      : products.filter((p) => p.category === selectedCategory);
 
-  // Add product to the cart
+  // Add to cart
   const handleAddToCart = (product: Product) => {
     alert(`${product.title} has been added to the cart!`);
     const storedCart = JSON.parse(localStorage.getItem("cart") || "[]");
@@ -90,7 +88,7 @@ export default function HeroCards() {
     localStorage.setItem("cart", JSON.stringify(updatedCart));
   };
 
-  const showMore = () => setVisibleCount((prevCount) => prevCount + 6);
+  const showMore = () => setVisibleCount((prev) => prev + 6);
   const showLess = () => setVisibleCount(6);
 
   const formatPrice = (price: number, discountPercentage?: number) =>
@@ -102,11 +100,17 @@ export default function HeroCards() {
     <div className="md:mx-auto py-20 px-6 lg:px-0 w-full md:max-w-[1124px] flex flex-col items-center gap-12">
       <div className="text-center">
         <h4 className="text-lg text-gray-500 font-medium">Featured Products</h4>
-        <h3 className="text-3xl text-gray-800 font-bold mt-2">BESTSELLER PRODUCTS</h3>
-        <p className="text-gray-600 mt-4">Discover the best-selling products carefully curated for you.</p>
+        <h3 className="text-3xl text-gray-800 font-bold mt-2">
+          BESTSELLER PRODUCTS
+        </h3>
+        <p className="text-gray-600 mt-4">
+          Discover the best-selling products carefully curated for you.
+        </p>
       </div>
 
-      {loading && <div className="text-center text-gray-500">Loading products...</div>}
+      {loading && (
+        <div className="text-center text-gray-500">Loading products...</div>
+      )}
       {error && <div className="text-center text-red-500">{error}</div>}
 
       {/* Category Filter */}
@@ -139,12 +143,14 @@ export default function HeroCards() {
                   src={product.imageUrl}
                   alt={product.title || "Product Image"}
                   fill
-                  objectFit="cover"
+                  style={{ objectFit: "cover" }}
                   className="rounded-t-lg"
                 />
               ) : (
                 <div className="bg-gray-200 flex items-center justify-center h-full rounded-t-lg">
-                  <span className="text-gray-500 text-sm">No Image Available</span>
+                  <span className="text-gray-500 text-sm">
+                    No Image Available
+                  </span>
                 </div>
               )}
               {product.isNew && (
@@ -155,12 +161,18 @@ export default function HeroCards() {
             </div>
 
             <div className="p-4 flex flex-col items-start gap-3">
-              <h3 className="text-lg font-semibold text-gray-800 truncate">{product.title}</h3>
-              <p className="text-sm text-gray-600 line-clamp-2">{product.description}</p>
+              <h3 className="text-lg font-semibold text-gray-800 truncate">
+                {product.title}
+              </h3>
+              <p className="text-sm text-gray-600 line-clamp-2">
+                {product.description}
+              </p>
 
               <div className="flex items-center gap-3">
                 {product.discountPercentage && (
-                  <span className="text-gray-400 line-through font-medium">${product.price.toFixed(2)}</span>
+                  <span className="text-gray-400 line-through font-medium">
+                    ${product.price.toFixed(2)}
+                  </span>
                 )}
                 <span className="text-green-600 font-bold">
                   ${formatPrice(product.price, product.discountPercentage)}
