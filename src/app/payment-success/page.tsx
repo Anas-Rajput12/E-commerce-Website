@@ -1,8 +1,11 @@
-export default function PaymentSuccess({
-  searchParams: { amount },
-}: {
-  searchParams: { amount: string };
-}) {
+"use client";
+
+import { useSearchParams } from "next/navigation";
+
+export default function PaymentSuccess() {
+  const searchParams = useSearchParams();
+  const amount = searchParams.get("amount") || "0";
+
   return (
     <main className="max-w-6xl mx-auto p-10 text-white text-center border m-10 rounded-md bg-gradient-to-tr from-slate-400 to-zinc-900">
       <div className="mb-10">
