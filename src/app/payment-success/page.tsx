@@ -1,24 +1,68 @@
+// File: app/payment-success/page.tsx
 "use client";
 
+import React from "react";
 import { useSearchParams } from "next/navigation";
 
 export default function PaymentSuccess() {
+  // Get search params
   const searchParams = useSearchParams();
   const amount = searchParams.get("amount") || "0";
 
   return (
     <main
-      role="main"
-      className="max-w-3xl mx-auto p-10 text-white text-center rounded-md bg-gradient-to-tr from-slate-400 to-zinc-900"
+      style={{
+        maxWidth: "800px",
+        margin: "2rem auto",
+        padding: "2rem",
+        textAlign: "center",
+        borderRadius: "12px",
+        background: "linear-gradient(to top right, #64748b, #1e293b)",
+        color: "white",
+        boxShadow: "0 8px 20px rgba(0,0,0,0.4)",
+      }}
     >
-      <div className="mb-8">
-        <h1 className="text-4xl md:text-5xl font-extrabold mb-3">Thank you!</h1>
-        <h2 className="text-xl md:text-2xl">You successfully sent</h2>
+      <h1
+        style={{
+          fontSize: "3rem",
+          fontWeight: "800",
+          marginBottom: "1rem",
+        }}
+      >
+        🎉 Thank you!
+      </h1>
+      <h2
+        style={{
+          fontSize: "1.5rem",
+          marginBottom: "2rem",
+        }}
+      >
+        You successfully sent
+      </h2>
 
-        <div className="bg-white p-4 rounded-md text-black mt-6 text-3xl md:text-4xl font-bold">
-          ${amount}
-        </div>
+      <div
+        style={{
+          backgroundColor: "white",
+          color: "#1e293b",
+          padding: "1rem 2rem",
+          borderRadius: "8px",
+          fontSize: "2.5rem",
+          fontWeight: "700",
+          display: "inline-block",
+        }}
+      >
+        ${amount}
       </div>
+
+      <p
+        style={{
+          marginTop: "2rem",
+          fontSize: "1rem",
+          color: "#cbd5e1",
+        }}
+      >
+        Your payment has been processed successfully.
+      </p>
     </main>
   );
 }
