@@ -7,14 +7,13 @@ export default {
         name: "name",
         title: "Name",
         type: "string",
-        validation: (Rule) => Rule.required().min(3).error("A name of at least 3 characters is required."),
+        validation: (Rule : any) => Rule.required().min(3).error("A name of at least 3 characters is required."),
       },
       {
         name: "description",
         title: "Description",
         type: "text",
-        validation: (Rule) =>
-          Rule.required().min(10).error("A description of at least 10 characters is required."),
+        validation: (Rule : any) => Rule.required().min(10).error("A description of at least 10 characters is required."),
       },
       {
         name: "status",
@@ -27,7 +26,7 @@ export default {
           ],
           layout: "radio", // You can also use "dropdown" for a select input
         },
-        validation: (Rule) => Rule.required().error("Status is required."),
+        validation: (Rule : any) => Rule.required().error("Status is required."),
       },
       {
         name: "image",
