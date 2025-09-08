@@ -4,6 +4,17 @@ import { client } from "@/sanity/lib/client";
 import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 
+interface Product {
+  _id: string;
+  title: string;
+  description: string;
+  imageUrl: string;
+  price: number;
+  tags?: string[];
+  discountPercentage?: number;
+  isNew?: boolean;
+}
+
 async function fetchProductById(id: string) {
   const query = `
     *[_type == "product" && _id == $id][0]{
@@ -17,12 +28,12 @@ async function fetchProductById(id: string) {
       isNew
     }
   `;
-  return client.fetch(query, { id });
+  return client.fetch<Product>(query, { id }); // ✅ Strongly typed return
 }
 
 export default function ProductDetails() {
-  const { id } = useParams<{ id: string }>(); // ✅ get id from URL
-  const [product, setProduct] = useState<any>(null);
+  const { id } = useParams<{ id: string }>();
+  const [product, setProduct] = useState<Product | null>(null); // ✅ fixed type
 
   useEffect(() => {
     if (id) {
@@ -37,6 +48,7 @@ export default function ProductDetails() {
       <div className="flex flex-col md:flex-row gap-8">
         {/* Image */}
         <div className="relative w-full md:w-1/2 h-96">
+          {/* ✅ Use Next.js Image for optimization */}
           <img
             src={product.imageUrl}
             alt={product.title}
